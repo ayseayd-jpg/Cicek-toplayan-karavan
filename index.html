@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Papatya Toplayan Sevimli Karavan 🌸</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #ffeef4 0%, #e8f5e9 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    #game-container {
+      position: relative;
+      background: #c8e6c9;
+      border: 8px solid #ffb6c1;
+      border-radius: 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      width: 90vw;
+      max-width: 600px;
+      height: 400px;
+      overflow: hidden;
+    }
+    #scoreboard {
+      position: absolute;
+      top: 12px;
+      left: 16px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #d81b60;
+      background: rgba(255, 255, 255, 0.85);
+      padding: 6px 14px;
+      border-radius: 20px;
+      z-index: 10;
+    }
+    #karavan {
+      position: absolute;
+      width: 60px;
+      height: 40px;
+      background-color: #ff80ab;
+      border-radius: 12px 16px 6px 6px;
+      border: 3px solid #c2185b;
+      transition: transform 0.1s linear;
+      z-index: 5;
+    }
+    /* Karavan Camı */
+    #karavan::after {
+      content: '';
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 18px;
+      height: 14px;
+      background: #e0f7fa;
+      border-radius: 4px;
+      border: 2px solid #00acc1;
+    }
+    /* Karavan Tekerlekleri */
+    .wheel {
+      position: absolute;
+      bottom: -8px;
+      width: 14px;
+      height: 14px;
+      background: #37474f;
+      border-radius: 50%;
+      border: 2px solid #cfd8dc;
+    }
+    .wheel-left { left: 8px; }
+    .wheel-right { right: 8px; }
+
+    .item {
+      position: absolute;
+      font-size: 28px;
+      z-index: 4;
+      animation: bounce 1s infinite alternate;
+    }
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to { transform: translateY(-6px); }
+    }
+
+    /* Dokunmatik Kontroller (Tablet ve Telefon için) */
+    #controls {
+      display: grid;
+      grid-template-columns: repeat(3, 60px);
+      grid-gap: 8px;
+      margin-top: 16px;
+    }
+    .btn {
+      width: 60px;
+      height: 60px;
+      background: #ffb6c1;
+      border: none;
+      border-radius: 50%;
+      font-size: 24px;
+      color: white;
+      font-weight: bold;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      cursor: pointer;
+    }
+    .btn:active {
+      background: #ff80ab;
+      transform: scale(0.95);
+    }
+    .empty-btn { visibility: hidden; }
+    h1 {
+      margin: 8px 0;
+      color: #ad1457;
+      font-size: 24px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🌸 Papatya Toplayan Karavan 🍓</h1>
+
+  <div id="game-container">
+    <div id="scoreboard">Puan: <span id="score">0</span> 🌸</div>
+    <div id="karavan">
+      <div class="wheel wheel-left"></div>
+      <div class="wheel wheel-right"></div>
+    </div>
+  </div>
+
+  <div id="controls">
+    <div class="empty-btn"></div>
+    <button class="btn" onclick="move(0, -25)">⬆️</button>
+    <div class="empty-btn"></div>
+    <button class="btn" onclick="move(-25, 0)">⬅️</button>
+    <button class="btn" onclick="move(0, 25)">⬇️</button>
+    <button class="btn" onclick="move(25, 0)">➡️</button>
+  </div>
+
+  <script>
+    const container = document.getElementById('game-container');
+    const karavan = document.getElementById('karavan');
+    const scoreText = document.getElementById('score');
+
+    let posX = 50;
+    let posY = 150;
+    let score = 0;
+    const items = ['🌸', '🍓', '🌼', '🌷', '✨'];
+    let currentItem = null;
+
+    function updateKaravanPosition() {
+      const maxX = container.clientWidth - 70;
+      const maxY = container.clientHeight - 50;
+
+      if (posX < 10) posX = 10;
+      if (posY < 10) posY = 10;
+      if (posX > maxX) posX = maxX;
+      if (posY > maxY) posY = maxY;
+
+      karavan.style.left = posX + 'px';
+      karavan.style.top = posY + 'px';
+      checkCollision();
+    }
+
+    function move(dx, dy) {
+      posX += dx;
+      posY += dy;
+      updateKaravanPosition();
+    }
+
+    window.addEventListener('keydown', (e) => {
+      const step = 20;
+      if (e.key === 'ArrowUp' || e.key === 'w') move(0, -step);
+      if (e.key === 'ArrowDown' || e.key === 's') move(0, step);
+      if (e.key === 'ArrowLeft' || e.key === 'a') move(-step, 0);
+      if (e.key === 'ArrowRight' || e.key === 'd') move(step, 0);
+    });
+
+    function spawnItem() {
+      if (currentItem) currentItem.remove();
+
+      const itemElem = document.createElement('div');
+      itemElem.className = 'item';
+      itemElem.innerText = items[Math.floor(Math.random() * items.length)];
+
+      const randX = Math.floor(Math.random() * (container.clientWidth - 50)) + 10;
+      const randY = Math.floor(Math.random() * (container.clientHeight - 80)) + 40;
+
+      itemElem.style.left = randX + 'px';
+      itemElem.style.top = randY + 'px';
+
+      container.appendChild(itemElem);
+      currentItem = itemElem;
+    }
+
+    function checkCollision() {
+      if (!currentItem) return;
+
+      const kRect = karavan.getBoundingClientRect();
+      const iRect = currentItem.getBoundingClientRect();
+
+      const overlap = !(
+        kRect.top > iRect.bottom ||
+        kRect.right < iRect.left ||
+        kRect.bottom < iRect.top ||
+        kRect.left > iRect.right
+      );
+
+      if (overlap) {
+        score += 10;
+        scoreText.innerText = score;
+        spawnItem();
+      }
+    }
+
+    updateKaravanPosition();
+    spawnItem();
+  </script>
+</body>
+</html>
